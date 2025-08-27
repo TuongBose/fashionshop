@@ -29,3 +29,6 @@ npm install --dev @babel/core @babel/node @babel/preset-env
 
 Thư viện quản lý các biến môi trường
 npm install dotenv nodemon 
+
+Thư viện validate dữ liệu vào
+npm install joi
