@@ -1,30 +1,63 @@
 import db from "../models"
+import { Sequelize } from "sequelize";
+const { Op } = Sequelize;
 
 export async function getCategories(req, res) {
-    res.status(200).json({
-        message: 'Get Categories successfully'
+    const { search = '', page = 1 } = req.query;
+    const pageSize = 5;
+    const offset = (page - 1) * pageSize;
+
+    let whereClause = {};
+    if (search.trim() !== '') {
+        whereClause = {
+            [Op.or]: [
+                { name: { [Op.like]: `%${search}%` } },
+            ]
+        };
+    }
+
+    const [categories, totalCategories] = await Promise.all([
+        db.Category.findAll({
+            where: whereClause,
+            limit: pageSize,
+            offset: offset,
+        }),
+        db.Category.count({
+            where: whereClause,
+        })
+    ]);
+
+    return res.status(200).json({
+        message: 'Get Categories successfully',
+        data: categories,
+        currentPage: parseInt(page, 10),
+        totalPages: Math.ceil(totalCategories / pageSize),
+        totalCategories,
     });
 }
 
 export async function getCategoryById(req, res) {
+    const { id } = req.params;
+    const category = await db.Category.findByPk(id);
+
+    if (!category) {
+        return res.status(404).json({
+            message: 'Not found'
+        })
+    }
+
     res.status(200).json({
-        message: 'Get Category detail successfully'
+        message: 'Get Category detail successfully',
+        data: category
     });
 }
 
 export async function insertCategory(req, res) {
-    try {
-        const category = await db.Category.create(req.body)
-        res.status(201).json({
-            message: 'Insert Category successfully',
-            data: category
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Insert Category failed",
-            error: error.message
-        })
-    }
+    const category = await db.Category.create(req.body)
+    res.status(201).json({
+        message: 'Insert Category successfully',
+        data: category
+    });
 }
 
 export async function deleteCategory(req, res) {
