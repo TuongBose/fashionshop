@@ -67,13 +67,35 @@ export async function insertBrand(req, res) {
 }
 
 export async function updateBrand(req, res) {
-    res.status(200).json({
-        message: 'Update Brand successfully'
+    const { id } = req.params;
+    const updatedBrand = await db.Brand.update(req.body, {
+        where: { id }
     });
+    if (updatedBrand[0] > 0) {
+        res.status(200).json({
+            message: 'Update Brand successfully'
+        });
+    }
+    else {
+        res.status(404).json({
+            message: 'Brand not found'
+        })
+    }
 }
 
 export async function deleteBrand(req, res) {
-    res.status(200).json({
-        message: 'Delete Brand successfully'
+    const { id } = req.params;
+    const deleted = await db.Brand.destroy({
+        where: { id }
     });
+    if (deleted) {
+        return res.status(200).json({
+            message: 'Delete Brand successfully'
+        });
+    }
+    else {
+        res.status(404).json({
+            message: 'Brand not found'
+        })
+    }
 }

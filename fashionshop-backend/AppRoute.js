@@ -6,7 +6,8 @@ import * as OrderDetailController from './controllers/OrderDetailController.js'
 import * as BrandController from './controllers/BrandController.js'
 import asyncHandler from './middlewares/asyncHandler.js'
 import validate from './middlewares/validate.js'
-import InsertProductRequest from './dtos/requests/insertproductrequest.js'
+import UpdateProductRequest from './dtos/requests/product/UpdateProductRequest.js'
+import InsertProductRequest from './dtos/requests/product/InsertProductRequest.js'
 const router = express.Router()
 
 export function AppRoute(app) {
@@ -17,7 +18,9 @@ export function AppRoute(app) {
         validate(InsertProductRequest),
         asyncHandler(ProductController.insertProduct)
     )
-    router.put('/products/:id', asyncHandler(ProductController.updateProduct))
+    router.put('/products/:id',
+        validate(UpdateProductRequest),
+        asyncHandler(ProductController.updateProduct))
     router.delete('/products/:id', asyncHandler(ProductController.deleteProduct))
 
     // ---------- Category ----------

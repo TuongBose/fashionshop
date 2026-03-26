@@ -1,6 +1,6 @@
 import Joi from 'joi'
 
-class InsertProductRequest {
+class UpdateProductRequest {
     constructor(data) {
         this.name = data.name
         this.price = data.price
@@ -16,20 +16,20 @@ class InsertProductRequest {
 
     static validate(data) {
         const schema = Joi.object({
-            name: Joi.string().required(),
-            price: Joi.number().positive().required(),
-            oldprice: Joi.number().positive(),
-            image: Joi.string().uri().allow(''),
+            name: Joi.string().optional(),
+            price: Joi.number().positive().optional(),
+            oldprice: Joi.number().positive().optional(),
+            image: Joi.string().uri().allow("").optional(),
             description: Joi.string().optional(),
-            specification: Joi.string().required(),
-            buyturn: Joi.number().integer().min(0),
-            quantity: Joi.number().integer().min(0),
-            brand_id: Joi.number().integer().required(),
-            category_id: Joi.number().integer().required()
+            specification: Joi.string().optional(),
+            buyturn: Joi.number().integer().min(0).optional(),
+            quantity: Joi.number().integer().min(0).optional(),
+            brand_id: Joi.number().integer().optional(),
+            category_id: Joi.number().integer().optional()
         });
 
         return schema.validate(data); // {error, value}
     }
 }
 
-export default InsertProductRequest;
+export default UpdateProductRequest;

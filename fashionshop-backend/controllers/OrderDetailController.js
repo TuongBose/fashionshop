@@ -1,3 +1,7 @@
+import { Sequelize } from "sequelize";
+const { Op } = Sequelize;
+import db from "../models"
+
 export async function getOrderDetails(req, res) {
     res.status(200).json({
         message: 'Get Order Details successfully'
@@ -11,8 +15,10 @@ export async function getOrderDetailById(req, res) {
 }
 
 export async function insertOrderDetail(req, res) {
-    res.status(200).json({
-        message: 'Insert Order Detail successfully'
+    const newOrderDetail = await db.OrderDetail.create(req.body);
+    res.status(201).json({
+        message: 'Insert Order Detail successfully',
+        data:newOrderDetail
     });
 }
 

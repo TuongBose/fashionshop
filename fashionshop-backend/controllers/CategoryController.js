@@ -61,13 +61,35 @@ export async function insertCategory(req, res) {
 }
 
 export async function deleteCategory(req, res) {
-    res.status(200).json({
-        message: 'Delete Category successfully'
+    const { id } = req.params;
+    const deleted = await db.Category.destroy({
+        where: { id }
     });
+    if (deleted) {
+        return res.status(200).json({
+            message: 'Delete Category successfully'
+        });
+    }
+    else {
+        res.status(404).json({
+            message: 'Category not found'
+        })
+    }
 }
 
 export async function updateCategory(req, res) {
-    res.status(200).json({
-        message: 'Update Category successfully'
+    const { id } = req.params;
+    const updatedCategory = await db.Category.update(req.body, {
+        where: { id }
     });
+    if (updatedCategory[0] > 0) {
+        res.status(200).json({
+            message: 'Update Category successfully'
+        });
+    }
+    else {
+        res.status(404).json({
+            message: 'Category not found'
+        })
+    }
 }
