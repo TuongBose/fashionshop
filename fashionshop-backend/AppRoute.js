@@ -4,13 +4,21 @@ import * as CategoryController from './controllers/CategoryController.js'
 import * as OrderController from './controllers/OrderController.js'
 import * as OrderDetailController from './controllers/OrderDetailController.js'
 import * as BrandController from './controllers/BrandController.js'
+import * as UserController from './controllers/UserController.js'
 import asyncHandler from './middlewares/asyncHandler.js'
 import validate from './middlewares/validate.js'
 import UpdateProductRequest from './dtos/requests/product/UpdateProductRequest.js'
 import InsertProductRequest from './dtos/requests/product/InsertProductRequest.js'
+import InsertOrderRequest from './dtos/requests/order/InsertOrderRequest.js'
+import InsertUserRequest from './dtos/requests/user/InsertUserRequest.js'
 const router = express.Router()
 
 export function AppRoute(app) {
+    // ---------- User ----------
+    router.post('/users',
+        validate(InsertUserRequest),
+        asyncHandler(UserController.insertUser))
+
     // ---------- Product ----------
     router.get('/products', asyncHandler(ProductController.getProducts))
     router.get('/products/:id', asyncHandler(ProductController.getProductById))
@@ -33,7 +41,9 @@ export function AppRoute(app) {
     // ---------- Order ----------
     router.get('/orders', asyncHandler(OrderController.getOrders))
     router.get('/orders/:id', asyncHandler(OrderController.getOrderById))
-    router.post('/orders', asyncHandler(OrderController.insertOrder))
+    router.post('/orders',
+        validate(InsertOrderRequest),
+        asyncHandler(OrderController.insertOrder))
     router.put('/orders/:id', asyncHandler(OrderController.updateOrder))
     router.delete('/orders/:id', asyncHandler(OrderController.deleteOrder))
 

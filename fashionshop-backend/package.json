@@ -16,6 +16,7 @@
     "@babel/core": "^7.28.3",
     "@babel/node": "^7.28.0",
     "@babel/preset-env": "^7.28.3",
+    "argon2": "^0.44.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "joi": "^18.0.1",

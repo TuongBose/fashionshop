@@ -14,16 +14,23 @@ export async function getOrderById(req, res) {
 }
 
 export async function insertOrder(req, res) {
-    try {
-        const newOrder = await db.Order.create(req.body);
+    const userId = req.body.user_id;
+    const existingUser = await db.User.findByPk(userId);
+    if (!existingUser) {
+        return res.status(404).json({
+            message: "User not found"
+        })
+    }
+
+    const newOrder = await db.Order.create(req.body);
+    if (newOrder) {
         res.status(201).json({
             message: 'Insert Order successfully',
             data: newOrder
         });
-    } catch (error) {
-        res.status(500).json({
-            message: 'Insert Order failed',
-            error: error.message
+    } else {
+        res.status(400).json({
+            message: 'Insert order failed'
         })
     }
 }

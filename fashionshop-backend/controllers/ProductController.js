@@ -66,6 +66,15 @@ export async function insertProduct(req, res) {
   //     });
   // }
 
+  const userId = req.body.user_id;
+
+  const user = await db.User.findByPk(userId);
+  if (!user) {
+    return res.status(404).json({
+      message: 'User does not exist'
+    })
+  }
+
   const product = await db.Product.create(req.body);
   return res.status(201).json({
     message: 'Insert Product successfully',
