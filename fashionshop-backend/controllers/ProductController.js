@@ -13,9 +13,9 @@ export async function getProducts(req, res) {
   if (search.trim() !== '') {
     whereClause = {
       [Op.or]: [
-        { name: { [Op.like]: `%${search}%` } },
-        { description: { [Op.like]: `%${search}%` } },
-        { specification: { [Op.like]: `%${search}%` } }
+        { name: { [Op.iLike]: `%${search}%` } },
+        { description: { [Op.iLike]: `%${search}%` } },
+        { specification: { [Op.iLike]: `%${search}%` } }
       ]
     };
   }

@@ -5,12 +5,16 @@ import * as OrderController from './controllers/OrderController.js'
 import * as OrderDetailController from './controllers/OrderDetailController.js'
 import * as BrandController from './controllers/BrandController.js'
 import * as UserController from './controllers/UserController.js'
+import * as NewsController from './controllers/NewsController.js'
+import * as NewsDetailController from './controllers/NewsDetailController.js'
 import asyncHandler from './middlewares/asyncHandler.js'
 import validate from './middlewares/validate.js'
 import UpdateProductRequest from './dtos/requests/product/UpdateProductRequest.js'
 import InsertProductRequest from './dtos/requests/product/InsertProductRequest.js'
 import InsertOrderRequest from './dtos/requests/order/InsertOrderRequest.js'
 import InsertUserRequest from './dtos/requests/user/InsertUserRequest.js'
+import InsertNewsRequest from './dtos/requests/news/InsertNewsRequest.js'
+import InsertNewsDetailRequest from './dtos/requests/newsdetail/InsertNewsDetailRequest.js'
 const router = express.Router()
 
 export function AppRoute(app) {
@@ -60,6 +64,24 @@ export function AppRoute(app) {
     router.post('/brands', asyncHandler(BrandController.insertBrand))
     router.put('/brands/:id', asyncHandler(BrandController.updateBrand))
     router.delete('/brands/:id', asyncHandler(BrandController.deleteBrand))
+
+    // ---------- News ----------
+    router.get('/news', asyncHandler(NewsController.getNewsArticle))
+    router.get('/news/:id', asyncHandler(NewsController.getNewsArticleById))
+    router.post('/news',
+        validate(InsertNewsRequest),
+        asyncHandler(NewsController.insertNewsArticle))
+    router.put('/news/:id', asyncHandler(NewsController.updateNewsArticle))
+    router.delete('/news/:id', asyncHandler(NewsController.deleteNewsArticle))
+
+    // ---------- NewsDetails ----------
+    router.get('/news-details', asyncHandler(NewsDetailController.getNewsDetails))
+    router.get('/news-details/:id', asyncHandler(NewsDetailController.getNewsDetailById))
+    router.post('/news-details', asyncHandler(NewsDetailController.insertNewsDetail))
+    router.put('/news-details/:id',
+        validate(InsertNewsDetailRequest),
+        asyncHandler(NewsDetailController.updateNewsDetail))
+    router.delete('/news-details/:id', asyncHandler(NewsDetailController.deleteNewsDetail))
 
     // Mount all routes under /api
     app.use('/api', router)
