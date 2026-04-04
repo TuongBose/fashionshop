@@ -98,16 +98,34 @@ export async function insertNewsArticle(req, res) {
 
 export async function deleteNewsArticle(req, res) {
     const { id } = req.params;
-    const deleted = await db.News.destroy({
-        where: { id }
-    })
-    if (deleted) {
-        return res.status(200).json({
-            message: 'Delete news article successfully'
+    const transaction = await db.sequelize.transaction();
+
+    try {
+        await db.NewsDetail.destroy({
+            where: { news_id: id },
+            transaction: transaction
         })
-    } else {
-        return res.status(404).json({
-            message: 'News Article not found'
+
+        const deleted = await db.News.destroy({
+            where: { id },
+            transaction: transaction
+        })
+        if (deleted) {
+            await transaction.commit();
+            return res.status(200).json({
+                message: 'Delete news article successfully'
+            })
+        } else {
+            await transaction.rollback();
+            return res.status(404).json({
+                message: 'News Article not found'
+            })
+        }
+    } catch (error) {
+        await transaction.rollback();
+        return res.stauts(500).json({
+            message: 'Delete news failed',
+            error: error.message
         })
     }
 }

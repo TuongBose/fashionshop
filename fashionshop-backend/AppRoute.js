@@ -15,6 +15,7 @@ import InsertOrderRequest from './dtos/requests/order/InsertOrderRequest.js'
 import InsertUserRequest from './dtos/requests/user/InsertUserRequest.js'
 import InsertNewsRequest from './dtos/requests/news/InsertNewsRequest.js'
 import InsertNewsDetailRequest from './dtos/requests/newsdetail/InsertNewsDetailRequest.js'
+import UpdateNewsRequest from './dtos/requests/news/UpdateNewsRequest.js'
 const router = express.Router()
 
 export function AppRoute(app) {
@@ -71,7 +72,9 @@ export function AppRoute(app) {
     router.post('/news',
         validate(InsertNewsRequest),
         asyncHandler(NewsController.insertNewsArticle))
-    router.put('/news/:id', asyncHandler(NewsController.updateNewsArticle))
+    router.put('/news/:id',
+        validate(UpdateNewsRequest),
+        asyncHandler(NewsController.updateNewsArticle))
     router.delete('/news/:id', asyncHandler(NewsController.deleteNewsArticle))
 
     // ---------- NewsDetails ----------
