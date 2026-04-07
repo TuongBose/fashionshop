@@ -9,6 +9,7 @@ import * as NewsController from './controllers/NewsController.js'
 import * as NewsDetailController from './controllers/NewsDetailController.js'
 import * as BannerController from './controllers/BannerController.js'
 import * as BannerDetailController from './controllers/BannerDetailController.js'
+import * as ImageController from './controllers/ImageController.js'
 import asyncHandler from './middlewares/asyncHandler.js'
 import validate from './middlewares/validate.js'
 import UpdateProductRequest from './dtos/requests/product/UpdateProductRequest.js'
@@ -20,6 +21,8 @@ import InsertNewsDetailRequest from './dtos/requests/newsdetail/InsertNewsDetail
 import UpdateNewsRequest from './dtos/requests/news/UpdateNewsRequest.js'
 import InsertBannerRequest from './dtos/requests/bannner/InsertBannerRequest.js'
 import InsertBannerDetailRequest from './dtos/requests/banner_detail/InsertBannerDetailRequest.js'
+import uploadImageMiddleware from './middlewares/imageUpload.js'
+
 const router = express.Router()
 
 export function AppRoute(app) {
@@ -111,6 +114,12 @@ export function AppRoute(app) {
         asyncHandler(BannerDetailController.updateBannerDetail)
     )
     router.delete('/banner-details/:id', asyncHandler(BannerDetailController.deleteBannerDetail))
+
+
+    router.post('/images/upload',
+        uploadImageMiddleware.array('images',5),
+        asyncHandler(ImageController.uploadImages)
+    )
 
     // Mount all routes under /api
     app.use('/api', router)

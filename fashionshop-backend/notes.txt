@@ -32,3 +32,6 @@ npm install dotenv nodemon
 
 Thư viện validate dữ liệu vào
 npm install joi
+
+Thư viện upload image
+npm install multer
