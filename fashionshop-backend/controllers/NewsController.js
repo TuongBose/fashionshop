@@ -132,6 +132,19 @@ export async function deleteNewsArticle(req, res) {
 
 export async function updateNewsArticle(req, res) {
     const { id } = req.params;
+    const {title} = req.body;
+    const existingNewsArticle = await db.News.findOne({
+        where: {
+            title: title,
+            id: { [db.Sequelize.Op.ne]: id }
+        }
+    });
+    if (existingNewsArticle) {
+        return res.status(400).json({
+            message: 'News Article with the same title already exists'
+        })
+    }
+    
     const updatedNewsArticle = await db.News.update(req.body, {
         where: { id }
     })

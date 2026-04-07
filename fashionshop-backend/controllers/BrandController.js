@@ -68,6 +68,19 @@ export async function insertBrand(req, res) {
 
 export async function updateBrand(req, res) {
     const { id } = req.params;
+    const { name } = req.body;
+    const existingBrand = await db.Brand.findOne({
+        where: {
+            name: name,
+            id: { [db.Sequelize.Op.ne]: id }
+        }
+    });
+    if (existingBrand) {
+        return res.status(400).json({
+            message: 'Brand with the same name already exists'
+        });
+    }
+
     const updatedBrand = await db.Brand.update(req.body, {
         where: { id }
     });

@@ -100,6 +100,19 @@ export async function deleteProduct(req, res) {
 
 export async function updateProduct(req, res) {
   const { id } = req.params;
+  const { name } = req.body;
+  const existingProduct = await db.Product.findOne({
+    where: {
+      name: name,
+      id: { [db.Sequelize.Op.ne]: id }
+    }
+  });
+  if (existingProduct) {
+    return res.status(400).json({
+      message: 'Product with the same name already exists'
+    })
+  }
+  
   const updatedProduct = await db.Product.update(req.body, {
     where: { id }
   });

@@ -97,7 +97,7 @@ export const deleteBanner = async (req, res) => {
         } else {
             await transaction.rollback();
             return res.status(404).json({
-                message: 'Banner not found'
+                message: 'Image does not exist'
             });
         }
 
@@ -112,18 +112,24 @@ export const deleteBanner = async (req, res) => {
 
 export const updateBanner = async (req, res) => {
     const { id } = req.params;
+    const { name } = req.body;
 
-    const [updated] = await db.Banner.update(req.body, {
+    const existingBanner = await db.Banner.findOne({
+        where: {
+            name: name,
+            id: { [Sequelize.Op.ne]: id }
+        }
+    })
+    if (existingBanner) {
+        return res.status(400).json({
+            message: 'Banner with the same name already exists'
+        })
+    }
+
+    const updated = await db.Banner.update(req.body, {
         where: { id }
     });
-
-    if (updated > 0) {
-        return res.status(200).json({
-            message: 'Update banner successfully'
-        });
-    } else {
-        return res.status(404).json({
-            message: 'Banner not found'
-        });
-    }
+    return res.status(200).json({
+        message: 'Update banner successfully'
+    });
 };
