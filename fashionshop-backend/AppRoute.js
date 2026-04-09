@@ -23,6 +23,7 @@ import InsertBannerRequest from './dtos/requests/bannner/InsertBannerRequest.js'
 import InsertBannerDetailRequest from './dtos/requests/banner_detail/InsertBannerDetailRequest.js'
 import uploadImageMiddleware from './middlewares/imageUpload.js'
 import validateImageExists from './middlewares/validateImageExists.js'
+import uploadGoogleImageMiddleware from './middlewares/imageGoogleUpload.js'
 
 const router = express.Router()
 
@@ -135,6 +136,10 @@ export function AppRoute(app) {
     router.post('/images/upload',
         uploadImageMiddleware.array('images', 5),
         asyncHandler(ImageController.uploadImages)
+    )
+    router.post('/images/google/upload',
+        uploadGoogleImageMiddleware.single('images'),
+        asyncHandler(ImageController.uploadImageToGoogleStorage)
     )
     router.get('/images/:fileName', asyncHandler(ImageController.getImages)
     )
