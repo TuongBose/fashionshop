@@ -81,7 +81,7 @@ export function AppRoute(app) {
         validateImageExists,
         asyncHandler(BrandController.insertBrand))
     router.put('/brands/:id',
-        validateImageExists, 
+        validateImageExists,
         asyncHandler(BrandController.updateBrand))
     router.delete('/brands/:id', asyncHandler(BrandController.deleteBrand))
 
@@ -141,6 +141,7 @@ export function AppRoute(app) {
         uploadGoogleImageMiddleware.single('images'),
         asyncHandler(ImageController.uploadImageToGoogleStorage)
     )
+    router.delete('/images/delete', ImageController.deleteImage)
     router.get('/images/:fileName', asyncHandler(ImageController.getImages)
     )
 
