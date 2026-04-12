@@ -1,0 +1,107 @@
+import db from "../models"
+import { Sequelize } from "sequelize";
+const { Op } = Sequelize;
+
+export async function getProductImages(req, res) {
+    const { product_id } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = 5;
+    const offset = (page - 1) * pageSize;
+
+    let whereClause = {};
+    if (product_id) {
+        whereClause.product_id = product_id;
+    }
+    try {
+        const [productImages, totalProductImages] = await Promise.all([
+            db.ProductImage.findAll({
+                where: whereClause,
+                limit: pageSize,
+                offset: offset,
+                // include: [{ model: db.Product, as: 'Product' }]
+            }),
+            db.ProductImage.count({
+                where: whereClause
+            })
+        ]);
+
+        return res.status(200).json({
+            message: 'Get product images successfully',
+            data: productImages,
+            currentPage: parseInt(page, 10),
+            totalPages: Math.ceil(totalProductImages / pageSize),
+            totalProductImages
+        });
+    }catch(error){
+        return res.status(500).json({
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
+
+export async function getProductImageById(req, res) {
+        const { id } = req.params;
+        const productImage = await db.ProductImage.findByPk(id);
+
+        if (!productImage) {
+            return res.status(404).json({
+                message: 'Product image not found'
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Get product image successfully',
+            data: productImage
+        });
+    }
+
+    export async function insertProductImage(req, res) {
+        const {product_id}=req.body;
+        const product= await db.Product.findByPk(product_id);
+        if (!product) {
+            return res.status(404).json({
+                message: 'Product not found'
+            });
+        }
+
+        const productImage = await db.ProductImage.create(req.body);
+        return res.status(201).json({
+            message: 'Product image created successfully',
+            data: productImage
+        });
+    }
+
+    export const deleteProductImage = async (req, res) => {
+        const { id } = req.params;
+        const deleted = await db.ProductImage.destroy({
+            where: { id }
+        });
+
+        if (!deleted) {
+            return res.status(404).json({
+                message: 'Product image not found'
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Product image deleted successfully'
+        });
+    }
+
+    export async function updateProductImage(req, res) {
+        const { id } = req.params;
+        const updatedProductImage = await db.ProductImage.update(req.body, {
+            where: { id }
+        });
+
+        if (updatedProductImage[0] > 0) {
+            return res.status(200).json({
+                message: 'Product image updated successfully',
+            });
+        } else {
+            return res.status(404).json({
+                message: 'Product image not found'
+            });
+        }
+    }

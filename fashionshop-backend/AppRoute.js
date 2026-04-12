@@ -10,6 +10,8 @@ import * as NewsDetailController from './controllers/NewsDetailController.js'
 import * as BannerController from './controllers/BannerController.js'
 import * as BannerDetailController from './controllers/BannerDetailController.js'
 import * as ImageController from './controllers/ImageController.js'
+import * as ProductImageController from './controllers/ProductImageController.js'
+
 import asyncHandler from './middlewares/asyncHandler.js'
 import validate from './middlewares/validate.js'
 import UpdateProductRequest from './dtos/requests/product/UpdateProductRequest.js'
@@ -24,6 +26,7 @@ import InsertBannerDetailRequest from './dtos/requests/banner_detail/InsertBanne
 import uploadImageMiddleware from './middlewares/imageUpload.js'
 import validateImageExists from './middlewares/validateImageExists.js'
 import uploadGoogleImageMiddleware from './middlewares/imageGoogleUpload.js'
+import InsertProductImageRequest from './dtos/requests/product_images/InsertProductImageRequest.js'
 
 const router = express.Router()
 
@@ -144,6 +147,15 @@ export function AppRoute(app) {
     router.delete('/images/delete', ImageController.deleteImage)
     router.get('/images/:fileName', asyncHandler(ImageController.getImages)
     )
+
+    // ---------- Product Image ----------
+    router.get('/product-images', asyncHandler(ProductImageController.getProductImages))
+    router.get('/product-images/:id', asyncHandler(ProductImageController.getProductImageById))
+    router.post('/product-images',
+        validate(InsertProductImageRequest),
+        asyncHandler(ProductImageController.insertProductImage))
+    router.put('/product-images/:id', asyncHandler(ProductImageController.updateProductImage))
+    router.delete('/product-images/:id', asyncHandler(ProductImageController.deleteProductImage))
 
     // Mount all routes under /api
     app.use('/api', router)
