@@ -43,7 +43,12 @@ export async function getProducts(req, res) {
 export async function getProductById(req, res) {
   const productId = req.params.id; // Cách 1: Lấy tham số id truyền vào từ params
   const { id } = req.params;       // Cách 2: tìm trong params có trường id thì lấy giá trị của nó 
-  const product = await db.Product.findByPk(id);
+  const product = await db.Product.findByPk(id,{
+    include: [{
+      model:db.ProductImage,
+      as: 'product_images',
+    }]
+  });
   if (!product) {
     // If not found product, return a 404 Not Found response
     return res.status(400).json({

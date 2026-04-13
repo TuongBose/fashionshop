@@ -57,11 +57,24 @@ export async function getProductImageById(req, res) {
     }
 
     export async function insertProductImage(req, res) {
-        const {product_id}=req.body;
+        const {product_id, image_url} = req.body;
         const product= await db.Product.findByPk(product_id);
         if (!product) {
             return res.status(404).json({
                 message: 'Product not found'
+            });
+        }
+
+        const existingImage = await db.ProductImage.findOne({
+            where: {
+                product_id: product_id,
+                image_url: image_url
+            }
+        });
+
+        if (existingImage) {
+            return res.status(409).json({
+                message: 'Product image already exists'
             });
         }
 

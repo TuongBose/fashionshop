@@ -5,7 +5,7 @@ import { Sequelize } from "sequelize";
 import { getStorage, uploadBytesResumable, getDownloadURL, ref, deleteObject } from "firebase/storage";
 import config from "../config/firebaseConfig"
 const { Op } = Sequelize;
-    const storage = getStorage();
+const storage = getStorage();
 
 export async function uploadImages(req, res) {
     if (req.files.length === 0) {
@@ -24,7 +24,7 @@ export async function uploadImageToGoogleStorage(req, res) {
         throw new Error('No files uploaded')
     }
 
-    
+
     const newFileName = `${Date.now()}-${req.file.originalname}`
     const storageRef = ref(storage, `images/${newFileName}`)
     const snapshot = await uploadBytesResumable(storageRef, req.file.buffer, {
@@ -51,30 +51,49 @@ export async function getImages(req, res) {
 }
 
 async function checkImageInUse(imageUrl) {
-    const models= [db.User,db.Category,db.Brand,db.Product,db.News,db.Banner];
-    for(let model of models){
+    const modelFields = {
+        User: 'avatar',
+        Category: 'image',
+        Brand: 'image',
+        Product: 'image',
+        News: 'image',
+        Banner: 'image'
+    }
+
+    const models = [db.User, db.Category, db.Brand, db.Product, db.News, db.Banner];
+    for (let model of models) {
+        const fieldName = modelFields[model.name];
+
+        let query = {};
+        query[fieldName] = imageUrl;
         const result = await model.findOne({
-            where:{image:imageUrl}
+            where: query
         });
-        if(result) return true;
+        if (result) {
+            console.log(
+                `Image is in use in ${model.name}, 
+                Field: ${fieldName},
+                Image URL: ${imageUrl}`);
+            return true;
+        }
     }
     return false;
 }
 
 export async function deleteImage(req, res) {
-    const { url : rawUrl} = req.body;
-const url  =rawUrl.trim();
+    const { url: rawUrl } = req.body;
+    const url = rawUrl.trim();
 
     try {
         const isInUser = await checkImageInUse(url);
-        if(isInUser){
+        if (isInUser) {
             return res.status(500).json({
                 message: 'Image is in use and cannot be deleted'
             })
         }
 
         if (url.includes('https://firebasestorage.googleapis.com/')) {
-            
+
             const fileRef = ref(storage, url);
 
             await deleteObject(fileRef);
@@ -95,10 +114,10 @@ const url  =rawUrl.trim();
             })
         }
     }
-    catch(error){
+    catch (error) {
         return res.status(500).json({
             message: 'Delete image failed',
-            error:error.message
+            error: error.message
         })
     }
 }
