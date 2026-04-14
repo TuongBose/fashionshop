@@ -1,16 +1,16 @@
 import db from "../models"
-import { Sequelize } from "sequelize";
+import { Sequelize, where } from "sequelize";
 const { Op } = Sequelize;
 
-export const getCart = async (req, res) => {
-    const {session_id,user_id,page=1} = req.query;
+export const getCarts = async (req, res) => {
+    const { session_id, user_id, page = 1 } = req.query;
     const pageSize = 5;
     const offset = (page - 1) * pageSize;
-    
+
     let whereClause = {};
     if (session_id) whereClause.session_id = session_id;
     if (user_id) whereClause.user_id = user_id;
-    
+
     const [carts, totalCarts] = await Promise.all([
         db.Cart.findAll({
             where: whereClause,
@@ -18,7 +18,7 @@ export const getCart = async (req, res) => {
             offset: offset,
             include: [{
                 model: db.CartItem,
-                as: 'cartItems',
+                as: 'cart_items',
             }],
         }),
         db.Cart.count({
@@ -40,7 +40,7 @@ export const getCartById = async (req, res) => {
     const cart = await db.Cart.findByPk(id, {
         include: [{
             model: db.CartItem,
-            as: 'cartItems',
+            as: 'cart_items',
         }],
     });
 
@@ -56,8 +56,31 @@ export const getCartById = async (req, res) => {
 }
 
 export const insertCart = async (req, res) => {
+    const { session_id, user_id } = req.body;
+
+    if ((!session_id && !user_id) || (session_id && user_id)) {
+        return res.status(400).json({
+            message: 'Either session_id or user_id must be provided, but not both'
+        });
+    }
+
+    const existingCart = await db.Cart.findOne({
+        where: {
+            [Op.or]: [
+                { session_id: session_id ? session_id : null },
+                { user_id: user_id ? user_id : null }
+            ]
+        }
+    });
+
+    if (existingCart) {
+        return res.status(409).json({
+            message: 'Cart with this session_id/user_id already exists'
+        });
+    }
+
     const cart = await db.Cart.create(req.body)
-    res.status(201).json({
+    return res.status(201).json({
         message: 'Insert Cart successfully',
         data: cart
     });

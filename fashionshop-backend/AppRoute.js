@@ -92,6 +92,7 @@ export function AppRoute(app) {
     // ---------- Cart Item ----------
     router.get('/cart-items', asyncHandler(CartItemController.getCartItems))
     router.get('/cart-items/:id', asyncHandler(CartItemController.getCartItemById))
+    router.get('/cart-items/cart/:cart_id', asyncHandler(CartItemController.getCartItemByCartId))
     router.post('/cart-items', 
         validate(InsertCartItemRequest),
         asyncHandler(CartItemController.insertCartItem))

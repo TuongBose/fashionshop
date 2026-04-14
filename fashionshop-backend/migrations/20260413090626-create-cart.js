@@ -10,10 +10,12 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       session_id: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        unique: true
       },
       user_id: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        unique: true
       },
       created_at: {
         allowNull: false,
