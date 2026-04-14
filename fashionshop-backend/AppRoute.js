@@ -11,6 +11,8 @@ import * as BannerController from './controllers/BannerController.js'
 import * as BannerDetailController from './controllers/BannerDetailController.js'
 import * as ImageController from './controllers/ImageController.js'
 import * as ProductImageController from './controllers/ProductImageController.js'
+import * as CartController from './controllers/CartController.js'
+import * as CartItemController from './controllers/CartItemController.js'
 
 import asyncHandler from './middlewares/asyncHandler.js'
 import validate from './middlewares/validate.js'
@@ -27,6 +29,8 @@ import uploadImageMiddleware from './middlewares/imageUpload.js'
 import validateImageExists from './middlewares/validateImageExists.js'
 import uploadGoogleImageMiddleware from './middlewares/imageGoogleUpload.js'
 import InsertProductImageRequest from './dtos/requests/product_images/InsertProductImageRequest.js'
+import InsertCartRequest from './dtos/requests/cart/InsertCartRequest.js'
+import InsertCartItemRequest from './dtos/requests/cart_item/InsertCartItemRequest.js'
 
 const router = express.Router()
 
@@ -76,6 +80,22 @@ export function AppRoute(app) {
     router.post('/orderdetails', asyncHandler(OrderDetailController.insertOrderDetail))
     router.put('/orderdetails/:id', asyncHandler(OrderDetailController.updateOrderDetail))
     router.delete('/orderdetails/:id', asyncHandler(OrderDetailController.deleteOrderDetail))
+
+    // ---------- Cart ----------
+    router.get('/carts', asyncHandler(CartController.getCarts))
+    router.get('/carts/:id', asyncHandler(CartController.getCartById))
+    router.post('/carts', 
+        validate(InsertCartRequest),
+        asyncHandler(CartController.insertCart))
+    router.delete('/carts/:id', asyncHandler(CartController.deleteCart))
+
+    // ---------- Cart Item ----------
+    router.get('/cart-items', asyncHandler(CartItemController.getCartItems))
+    router.get('/cart-items/:id', asyncHandler(CartItemController.getCartItemById))
+    router.post('/cart-items', 
+        validate(InsertCartItemRequest),
+        asyncHandler(CartItemController.insertCartItem))
+    router.delete('/cart-items/:id', asyncHandler(CartItemController.deleteCartItem))
 
     // ---------- Brand ----------
     router.get('/brands', asyncHandler(BrandController.getBrands))

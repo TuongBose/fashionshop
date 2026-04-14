@@ -16,6 +16,15 @@ npx sequelize-cli model:generate --name BannerDetail --attributes banner_id:inte
 npx sequelize-cli model:generate --name Feedback --attributes user_id:integer,product_id:integer,star:integer,content:text
 npx sequelize-cli model:generate --name NewsDetail --attributes product_id:integer,news_id:integer
 npx sequelize-cli model:generate --name ProductImage --attributes product_id:integer,image_url:text
+npx sequelize-cli migration:generate --name add_session_to_orders
+npx sequelize-cli model:generate --name Cart --attributes session_id:string,user_id:integer
+npx sequelize-cli model:generate --name CartItem --attributes cart_id:integer,product_id:integer,quantity:integer
+
+Xem cac rang buoc cua 1 bang
+select * from information_schema.table_constraints where table_schema = 'public' AND  table_name='orders'
+
+Xoa rang buoc cua 1 bang
+alter table orders drop constraint orders_user_id_fkey
 
 npx sequelize-cli db:migrate
 

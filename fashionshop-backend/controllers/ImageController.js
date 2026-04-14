@@ -69,7 +69,7 @@ async function checkImageInUse(imageUrl) {
         const result = await model.findOne({
             where: query
         });
-        if (result) {
+        if (result) {jj
             console.log(
                 `Image is in use in ${model.name}, 
                 Field: ${fieldName},
