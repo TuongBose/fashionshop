@@ -119,3 +119,61 @@ export const updateCart = async (req, res) => {
         })
     }
 }
+
+export const checkoutCart = async (req, res) => {
+    const { cart_id, total, note } = req.body;
+    const transaction = await db.sequelize.transaction();
+
+    try {
+        const cart = await db.Cart.findByPk(cart_id, {
+            include: [{
+                model: db.cartItem,
+                as: 'cart_items',
+                include: [{
+                    model: db.Product,
+                    as: 'product',
+                }]
+            }],
+        });
+
+        if (!cart || !cart.cart_items.length) {
+            return res.status(404).json({
+                message: 'Cart not found or empty'
+            });
+        }
+
+        const newOrder = await db.Order.create({
+            user_id: cart.user_id,
+            session_id: cart.session_id,
+            total: total || cart.cart_items.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
+            note: note
+        }, { transaction });
+
+        for (let item of cart.cart_items) {
+            await db.OrderDetail.create({
+                order_id: newOrder.id,
+                product_id: item.product_id,
+                quantity: item.quantity,
+                price: item.product.price
+            }, { transaction });
+        }
+
+        await db.CartItem.destroy({
+            where: { cart_id: cart.id },
+        }, { transaction });
+        await cart.destroy({ transaction });
+
+        await transaction.commit();
+
+        return res.status(201).json({
+            message: 'Checkout Cart successfully',
+            data: newOrder
+        });
+    } catch (error) {
+        await transaction.rollback();
+        return res.status(500).json({
+            message: 'Checkout Cart failed',
+            error: error.message
+        });
+    }
+}

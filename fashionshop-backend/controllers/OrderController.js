@@ -8,8 +8,22 @@ export async function getOrders(req, res) {
 }
 
 export async function getOrderById(req, res) {
-    res.status(200).json({
-        message: 'Get Order detail successfully'
+    const {id} = req.params;
+    const order = await db.Order.findByPk(id, {
+        include: [{
+            model: db.OrderDetail,
+            as: 'order_details',
+        }]
+    });
+    if (!order) {
+        return res.status(404).json({
+            message: 'Order not found'
+        });
+    }
+
+    return res.status(200).json({ 
+        message: 'Get Order detail successfully',
+        data: order
     });
 }
 

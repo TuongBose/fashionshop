@@ -87,6 +87,7 @@ export function AppRoute(app) {
     router.post('/carts', 
         validate(InsertCartRequest),
         asyncHandler(CartController.insertCart))
+    router.post('/carts/checkout', asyncHandler(CartController.checkoutCart))
     router.delete('/carts/:id', asyncHandler(CartController.deleteCart))
 
     // ---------- Cart Item ----------
