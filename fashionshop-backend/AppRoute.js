@@ -31,6 +31,7 @@ import uploadGoogleImageMiddleware from './middlewares/imageGoogleUpload.js'
 import InsertProductImageRequest from './dtos/requests/product_images/InsertProductImageRequest.js'
 import InsertCartRequest from './dtos/requests/cart/InsertCartRequest.js'
 import InsertCartItemRequest from './dtos/requests/cart_item/InsertCartItemRequest.js'
+import UpdateOrderRequest from './dtos/requests/order/UpdateOrderRequest.js'
 
 const router = express.Router()
 
@@ -71,7 +72,9 @@ export function AppRoute(app) {
     router.post('/orders',
         validate(InsertOrderRequest),
         asyncHandler(OrderController.insertOrder))
-    router.put('/orders/:id', asyncHandler(OrderController.updateOrder))
+    router.put('/orders/:id', 
+        validate(UpdateOrderRequest),
+        asyncHandler(OrderController.updateOrder))
     router.delete('/orders/:id', asyncHandler(OrderController.deleteOrder))
 
     // ---------- OrderDetail ----------

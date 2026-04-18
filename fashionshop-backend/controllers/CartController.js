@@ -1,6 +1,7 @@
 import db from "../models"
 import { Sequelize, where } from "sequelize";
 const { Op } = Sequelize;
+import { OrderStatus } from "../constants";
 
 export const getCarts = async (req, res) => {
     const { session_id, user_id, page = 1 } = req.query;
@@ -145,6 +146,7 @@ export const checkoutCart = async (req, res) => {
         const newOrder = await db.Order.create({
             user_id: cart.user_id,
             session_id: cart.session_id,
+            status:OrderStatus.PENDING,
             total: total || cart.cart_items.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
             note: note
         }, { transaction });

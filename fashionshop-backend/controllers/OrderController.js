@@ -1,9 +1,43 @@
 import { Sequelize } from "sequelize";
+const { Op } = Sequelize;
 import db from "../models"
+import { OrderStatus } from "../constants";
 
 export async function getOrders(req, res) {
-    res.status(200).json({
-        message: 'Get Orders successfully'
+    const {search='', page = 1,status} = req.query;
+    const pageSize = 5;
+    const offset = (page - 1) * pageSize;
+    
+    let whereClause = {};
+    if(search.trim() !== '') {
+        whereClause = {
+            [Op.or]: [
+                {note: { [Op.like]: `%${search}%` }},
+            ]
+        }
+    }
+    if(status) {
+        whereClause.status = status;
+    }
+
+    const [orders, totalOrders] = await Promise.all([
+        db.Order.findAll({
+            where: whereClause,
+            limit: pageSize,
+            offset: offset,
+            order: [['created_at', 'DESC']],
+        }),
+        db.Order.count({
+            where: whereClause,
+        })
+    ]);
+
+    return res.status(200).json({
+        message: 'Get Orders successfully',
+        data: orders,
+        currentPage: parseInt(page, 10),
+        totalPages: Math.ceil(totalOrders / pageSize),
+        totalOrders,
     });
 }
 
@@ -67,10 +101,10 @@ export async function updateOrder(req, res) {
 
 export async function deleteOrder(req, res) {
     const { id } = req.params;
-    const deleted = await db.Order.destroy({
+    const [updated] = await db.Order.update({status:OrderStatus.FAILED}, {
         where: { id }
     });
-    if (deleted) {
+    if (updated) {
         res.status(200).json({
             message: 'Delete Order successfully'
         });
