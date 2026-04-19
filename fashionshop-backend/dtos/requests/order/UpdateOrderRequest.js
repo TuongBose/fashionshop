@@ -20,4 +20,4 @@ class UpdateOrderRequest {
 }
 
 
-export default UpdateOrderRequest;;
+export default UpdateOrderRequest;

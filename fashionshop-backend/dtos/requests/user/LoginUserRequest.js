@@ -1,13 +1,11 @@
 import Joi from 'joi'
 import { UserRole } from '../../../constants';
 
-class InsertUserRequest {
+class LoginUserRequest {
     constructor(data) {
         this.email=data.email;
         // this.password=this.encrytPassword(data.password);
         this.password = data.password;
-        this.name=data.name;
-        this.avatar=data.avatar;
         this.phone=data.phone;
     }
 
@@ -18,9 +16,7 @@ class InsertUserRequest {
     static validate(data) {
         const schema = Joi.object({
             email: Joi.string().email().optional(),
-            password: Joi.string().min(6).optional(),
-            name: Joi.string().required(),
-            avatar: Joi.string().uri().optional().allow(""),
+            password: Joi.string().min(6).required(),
             phone: Joi.string().optional(),
         });
 
@@ -29,4 +25,4 @@ class InsertUserRequest {
 }
 
 
-export default InsertUserRequest;
+export default LoginUserRequest;

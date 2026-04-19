@@ -20,6 +20,7 @@ import UpdateProductRequest from './dtos/requests/product/UpdateProductRequest.j
 import InsertProductRequest from './dtos/requests/product/InsertProductRequest.js'
 import InsertOrderRequest from './dtos/requests/order/InsertOrderRequest.js'
 import InsertUserRequest from './dtos/requests/user/InsertUserRequest.js'
+import LoginUserRequest from './dtos/requests/user/LoginUserRequest.js'
 import InsertNewsRequest from './dtos/requests/news/InsertNewsRequest.js'
 import InsertNewsDetailRequest from './dtos/requests/newsdetail/InsertNewsDetailRequest.js'
 import UpdateNewsRequest from './dtos/requests/news/UpdateNewsRequest.js'
@@ -37,9 +38,12 @@ const router = express.Router()
 
 export function AppRoute(app) {
     // ---------- User ----------
-    router.post('/users',
+    router.post('/users/register',
         validate(InsertUserRequest),
-        asyncHandler(UserController.insertUser))
+        asyncHandler(UserController.registerUser))
+    router.post('/users/login',
+        validate(LoginUserRequest),
+        asyncHandler(UserController.loginUser))
 
     // ---------- Product ----------
     router.get('/products', asyncHandler(ProductController.getProducts))
@@ -72,7 +76,7 @@ export function AppRoute(app) {
     router.post('/orders',
         validate(InsertOrderRequest),
         asyncHandler(OrderController.insertOrder))
-    router.put('/orders/:id', 
+    router.put('/orders/:id',
         validate(UpdateOrderRequest),
         asyncHandler(OrderController.updateOrder))
     router.delete('/orders/:id', asyncHandler(OrderController.deleteOrder))
@@ -87,7 +91,7 @@ export function AppRoute(app) {
     // ---------- Cart ----------
     router.get('/carts', asyncHandler(CartController.getCarts))
     router.get('/carts/:id', asyncHandler(CartController.getCartById))
-    router.post('/carts', 
+    router.post('/carts',
         validate(InsertCartRequest),
         asyncHandler(CartController.insertCart))
     router.post('/carts/checkout', asyncHandler(CartController.checkoutCart))
@@ -97,7 +101,7 @@ export function AppRoute(app) {
     router.get('/cart-items', asyncHandler(CartItemController.getCartItems))
     router.get('/cart-items/:id', asyncHandler(CartItemController.getCartItemById))
     router.get('/cart-items/cart/:cart_id', asyncHandler(CartItemController.getCartItemByCartId))
-    router.post('/cart-items', 
+    router.post('/cart-items',
         validate(InsertCartItemRequest),
         asyncHandler(CartItemController.insertCartItem))
     router.delete('/cart-items/:id', asyncHandler(CartItemController.deleteCartItem))
