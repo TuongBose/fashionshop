@@ -7,6 +7,7 @@ import argon2 from 'argon2'
 import { UserRole } from "../constants";
 import jwt from 'jsonwebtoken';
 require('dotenv').config();
+import { getAvatarUrl } from "../helpers/imageHelper";
 
 export async function registerUser(req, res) {
     const { email, phone, password } = req.body;
@@ -95,6 +96,7 @@ export async function loginUser(req, res) {
         {
             id: user.id,
             // role: user.role 
+            iat: Math.floor(Date.now() / 1000)
         },
         process.env.JWT_SECRET,
         {
@@ -113,17 +115,43 @@ export async function loginUser(req, res) {
 
 export async function updateUser(req, res) {
     const { id } = req.params;
-    const [updated] = await db.User.update(req.body, {
-        where: { id }
-    });
+    const { name, avatar, old_password, new_password } = req.body;
 
-    if (updated) {
-        return res.status(200).json({
-            message: 'Update user successfully'
+    if (req.user.id != id) {
+        return res.status(403).json({
+            message: 'Forbidden'
         })
-    } else {
+    }
+
+    const user = await db.User.findByPk(id);
+    if (!user) {
         return res.status(404).json({
             message: 'User not found'
         })
     }
+
+    if (old_password && new_password) {
+        const passwordValid = await argon2.verify(user.password, old_password);
+        if (!passwordValid) {
+            return res.status(401).json({
+                message: 'Old password is incorrect'
+            })
+        }
+
+        user.password = await argon2.hash(new_password);
+        user.password_changed_at = new Date();
+    } else if (new_password || old_password) {
+        return res.status(400).json({
+            message: 'Both old_password and new_password are required to change password'
+        })
+    }
+
+    user.name = name || user.name;
+    user.avatar = avatar || user.avatar;
+    user.avatar = getAvatarUrl(user.avatar);
+    
+    await user.save();
+    return res.status(200).json({
+        message: 'Update user successfully'
+    })
 }

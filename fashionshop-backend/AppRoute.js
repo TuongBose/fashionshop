@@ -47,6 +47,9 @@ export function AppRoute(app) {
     router.post('/users/login',
         validate(LoginUserRequest),
         asyncHandler(UserController.loginUser))
+    router.put('/users/:id',
+        requireRoles([UserRole.ADMIN, UserRole.USER]),
+        asyncHandler(UserController.updateUser))
 
     // ---------- Product ----------
     router.get('/products', asyncHandler(ProductController.getProducts))
@@ -101,10 +104,10 @@ export function AppRoute(app) {
     router.post('/orderdetails',
         requireRoles([UserRole.ADMIN]),
         asyncHandler(OrderDetailController.insertOrderDetail))
-    router.put('/orderdetails/:id', 
+    router.put('/orderdetails/:id',
         requireRoles([UserRole.ADMIN]),
         asyncHandler(OrderDetailController.updateOrderDetail))
-    router.delete('/orderdetails/:id', 
+    router.delete('/orderdetails/:id',
         requireRoles([UserRole.ADMIN]),
         asyncHandler(OrderDetailController.deleteOrderDetail))
 
@@ -115,7 +118,7 @@ export function AppRoute(app) {
         validate(InsertCartRequest),
         asyncHandler(CartController.insertCart))
     router.post('/carts/checkout', asyncHandler(CartController.checkoutCart))
-    router.delete('/carts/:id', 
+    router.delete('/carts/:id',
         requireRoles([UserRole.USER]),
         asyncHandler(CartController.deleteCart))
 
