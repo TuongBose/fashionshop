@@ -5,6 +5,8 @@ import { Sequelize } from "sequelize";
 const { Op } = Sequelize;
 import argon2 from 'argon2'
 import { UserRole } from "../constants";
+import jwt from 'jsonwebtoken';
+require('dotenv').config();
 
 export async function registerUser(req, res) {
     const { email, phone, password } = req.body;
@@ -76,6 +78,12 @@ export async function loginUser(req, res) {
         })
     }
 
+    if (user.is_active === false) {
+        return res.status(403).json({
+            message: 'Account is deactivated'
+        })
+    }
+
     const passwordValid = password && await argon2.verify(user.password, password);
     if (!passwordValid) {
         return res.status(401).json({
@@ -83,17 +91,22 @@ export async function loginUser(req, res) {
         })
     }
 
-    // const token = jwt.sign(
-    //     { id: user.id, role: user.role },
-    //     process.env.JWT_SECRET,
-    //     { expiresIn: '1d' }
-    // );
+    const token = jwt.sign(
+        {
+            id: user.id,
+            // role: user.role 
+        },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: process.env.JWT_EXPIRATION
+        }
+    );
 
     return res.status(200).json({
         message: 'Login successfully',
         data: {
             user: new ResponseUser(user),
-            // token
+            token
         }
     })
 }

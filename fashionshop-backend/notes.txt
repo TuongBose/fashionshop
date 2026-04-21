@@ -45,3 +45,6 @@ npm install joi
 
 Thư viện upload image
 npm install multer
+
+Thư viện jwt
+npm install jsonwebtoken
