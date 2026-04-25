@@ -29,7 +29,9 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Feedback',
     tableName:'feedbacks',
-    underscored:true
+    underscored:true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   });
   return Feedback;
 };

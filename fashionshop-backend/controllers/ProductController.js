@@ -40,7 +40,7 @@ export async function getProducts(req, res) {
     })),
     currentPage: parseInt(page, 10),
     totalPages: Math.ceil(totalProducts / pageSize),
-    totalProducts,
+    total: totalProducts,
   })
 }
 

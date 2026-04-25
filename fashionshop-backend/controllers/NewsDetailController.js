@@ -21,7 +21,7 @@ export const getNewsDetails = async (req, res) => {
         data: newsDetails,
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalNewsDetails / pageSize),
-        totalNewsDetails
+        total: totalNewsDetails
     })
 }
 

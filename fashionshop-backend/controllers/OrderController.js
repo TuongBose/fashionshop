@@ -37,7 +37,7 @@ export async function getOrders(req, res) {
         data: orders,
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalOrders / pageSize),
-        totalOrders,
+        total: totalOrders,
     });
 }
 

@@ -38,7 +38,7 @@ export const getNewsArticle = async (req, res) => {
         })),
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalNews / pageSize),
-        totalNews
+        total: totalNews
     })
 }
 

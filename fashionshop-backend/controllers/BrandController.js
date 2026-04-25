@@ -35,7 +35,7 @@ export async function getBrands(req, res) {
         })),
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalBrands / pageSize),
-        totalBrands,
+        total: totalBrands,
     });
 }
 

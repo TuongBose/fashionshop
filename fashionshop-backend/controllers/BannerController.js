@@ -35,7 +35,7 @@ export const getBanners = async (req, res) => {
         })),
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalBanners / pageSize),
-        totalBanners
+        total:totalBanners
     });
 };
 

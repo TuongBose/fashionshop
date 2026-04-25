@@ -32,7 +32,7 @@ export const getCarts = async (req, res) => {
         data: carts,
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalCarts / pageSize),
-        totalCarts,
+        total: totalCarts,
     });
 }
 

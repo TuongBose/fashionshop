@@ -34,7 +34,7 @@ export async function getProductImages(req, res) {
         })),
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalProductImages / pageSize),
-        totalProductImages
+        total: totalProductImages
     });
 }
 

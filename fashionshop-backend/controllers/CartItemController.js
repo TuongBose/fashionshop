@@ -26,7 +26,7 @@ export const getCartItems = async (req, res) => {
         data: cartItems,
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalCartItems / pageSize),
-        totalCartItems,
+        total: totalCartItems,
     });
 }
 

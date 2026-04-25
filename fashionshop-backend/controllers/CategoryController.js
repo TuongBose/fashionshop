@@ -34,9 +34,9 @@ export async function getCategories(req, res) {
             ...category.get({ plain: true }),
             image: getAvatarUrl(category.image)
         })),
-        currentPage: parseInt(page, 10),
-        totalPages: Math.ceil(totalCategories / pageSize),
-        totalCategories,
+        current_page: parseInt(page, 10),
+        total_pages: Math.ceil(totalCategories / pageSize),
+        total: totalCategories,
     });
 }
 
