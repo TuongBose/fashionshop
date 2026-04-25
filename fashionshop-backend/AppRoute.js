@@ -47,6 +47,9 @@ export function AppRoute(app) {
     router.post('/users/login',
         validate(LoginUserRequest),
         asyncHandler(UserController.loginUser))
+    router.post('/users/me/:id',
+        requireRoles([UserRole.ADMIN, UserRole.USER]),
+        asyncHandler(UserController.getUserById))
     router.put('/users/:id',
         requireRoles([UserRole.ADMIN, UserRole.USER]),
         asyncHandler(UserController.updateUser))

@@ -148,10 +148,39 @@ export async function updateUser(req, res) {
 
     user.name = name || user.name;
     user.avatar = avatar || user.avatar;
-    user.avatar = getAvatarUrl(user.avatar);
-    
+
     await user.save();
     return res.status(200).json({
-        message: 'Update user successfully'
+        message: 'Update user successfully',
+        data: {
+            ...user.get({ plain: true }),
+            avatar: getAvatarUrl(user.avatar)
+        }
+    })
+}
+
+export async function getUserById(req, res) {
+    const { id } = req.params;
+
+    if (req.user.id != id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({
+            message: 'Forbidden'
+        })
+    }
+
+    const user = await db.User.findByPk(id, {
+        attributes: { exclude: ['password'] }
+    });
+    if (!user) {
+        return res.status(404).json({
+            message: 'User not found'
+        })
+    }
+    return res.status(200).json({
+        message: 'Get user successfully',
+        data: {
+            ...user.get({ plain: true }),
+            avatar: getAvatarUrl(user.avatar)
+        }
     })
 }

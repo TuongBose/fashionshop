@@ -1,3 +1,4 @@
+import { getAvatarUrl } from "../helpers/imageHelper";
 import db from "../models"
 import { Sequelize } from "sequelize";
 const { Op } = Sequelize;
@@ -29,7 +30,10 @@ export async function getCategories(req, res) {
 
     return res.status(200).json({
         message: 'Get Categories successfully',
-        data: categories,
+        data: categories.map(category => ({
+            ...category.get({ plain: true }),
+            image: getAvatarUrl(category.image)
+        })),
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalCategories / pageSize),
         totalCategories,
@@ -48,7 +52,10 @@ export async function getCategoryById(req, res) {
 
     res.status(200).json({
         message: 'Get Category detail successfully',
-        data: category
+        data: {
+            ...category.get({ plain: true }),
+            image: getAvatarUrl(category.image)
+        }
     });
 }
 

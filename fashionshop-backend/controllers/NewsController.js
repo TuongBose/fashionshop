@@ -1,6 +1,7 @@
 import { date } from "joi";
 import db from "../models"
 import { Sequelize } from "sequelize";
+import { getAvatarUrl } from "../helpers/imageHelper";
 const { Op } = Sequelize;
 
 export const getNewsArticle = async (req, res) => {
@@ -31,7 +32,10 @@ export const getNewsArticle = async (req, res) => {
 
     return res.status(200).json({
         message: 'Get news successfully',
-        data: newsArticle,
+        data: newsArticle.map(news => ({
+            ...news.get({ plain: true }),
+            image: getAvatarUrl(news.image)
+        })),
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalNews / pageSize),
         totalNews
@@ -50,7 +54,10 @@ export async function getNewsArticleById(req, res) {
 
     res.status(200).json({
         message: 'Get news article successfully',
-        data: newsArticle
+        data: {
+            ...newsArticle.get({ plain: true }),
+            image: getAvatarUrl(newsArticle.image)
+        }
     })
 }
 

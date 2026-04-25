@@ -1,6 +1,7 @@
 import { Sequelize } from "sequelize";
 const { Op } = Sequelize;
 import db from "../models"
+import { getAvatarUrl } from "../helpers/imageHelper";
 
 export async function getProducts(req, res) {
   // const products = await db.Product.findAll(); // Phai phan trang
@@ -33,7 +34,10 @@ export async function getProducts(req, res) {
 
   return res.status(200).json({
     message: 'Get Products successfully',
-    data: products,
+    data: products.map(product => ({
+      ...product.get({ plain: true }),
+      image: getAvatarUrl(product.image)
+    })),
     currentPage: parseInt(page, 10),
     totalPages: Math.ceil(totalProducts / pageSize),
     totalProducts,
@@ -43,9 +47,9 @@ export async function getProducts(req, res) {
 export async function getProductById(req, res) {
   const productId = req.params.id; // Cách 1: Lấy tham số id truyền vào từ params
   const { id } = req.params;       // Cách 2: tìm trong params có trường id thì lấy giá trị của nó 
-  const product = await db.Product.findByPk(id,{
+  const product = await db.Product.findByPk(id, {
     include: [{
-      model:db.ProductImage,
+      model: db.ProductImage,
       as: 'product_images',
     }]
   });
@@ -57,7 +61,10 @@ export async function getProductById(req, res) {
   }
   res.status(200).json({
     message: 'Get Product detail successfully',
-    data: product
+    data: {
+      ...product.get({ plain: true }),
+      image: getAvatarUrl(product.image)
+    }
   })
 }
 
@@ -71,19 +78,33 @@ export async function insertProduct(req, res) {
   //     });
   // }
 
-  const userId = req.body.user_id;
+  // const userId = req.body.user_id;
 
-  const user = await db.User.findByPk(userId);
-  if (!user) {
-    return res.status(404).json({
-      message: 'User does not exist'
+  // const user = await db.User.findByPk(userId);
+  // if (!user) {
+  //   return res.status(404).json({
+  //     message: 'User does not exist'
+  //   })
+  // }
+  const { name } = req.body;
+  const existingProduct = await db.Product.findOne({
+    where: {
+      name: name
+    }
+  });
+  if (existingProduct) {
+    return res.status(400).json({
+      message: 'Product with the same name already exists'
     })
   }
 
   const product = await db.Product.create(req.body);
   return res.status(201).json({
     message: 'Insert Product successfully',
-    data: product
+    data: {
+      ...product.get({ plain: true }),
+      image: getAvatarUrl(product.image)
+    }
   })
 }
 
@@ -117,7 +138,7 @@ export async function updateProduct(req, res) {
       message: 'Product with the same name already exists'
     })
   }
-  
+
   const updatedProduct = await db.Product.update(req.body, {
     where: { id }
   });

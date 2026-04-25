@@ -1,3 +1,4 @@
+import { getAvatarUrl } from "../helpers/imageHelper";
 import db from "../models"
 import { Sequelize } from "sequelize";
 const { Op } = Sequelize;
@@ -28,7 +29,10 @@ export async function getBrands(req, res) {
     ]);
     return res.status(200).json({
         message: 'Get Brands successfully',
-        data: brands,
+        data: brands.map(brand => ({
+            ...brand.get({ plain: true }),
+            image: getAvatarUrl(brand.image)
+        })),
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalBrands / pageSize),
         totalBrands,
@@ -47,23 +51,19 @@ export async function getBrandById(req, res) {
 
     res.status(200).json({
         message: 'Get Brand detail successfully',
-        data: brand
+        data: { ...brand.get({ plain: true }), image: getAvatarUrl(brand.image) }
     });
 }
 
 export async function insertBrand(req, res) {
-    try {
-        const brand = await db.Brand.create(req.body);
+    const brand = await db.Brand.create(req.body);
         res.status(201).json({
             message: 'Insert Brand successfully',
-            data: brand
+            data: {
+                ...brand.get({ plain: true }),
+                image: getAvatarUrl(brand.image)
+            }
         });
-    } catch (error) {
-        res.status(500).json({
-            message: "Insert Brand failed",
-            error: error.message
-        })
-    }
 }
 
 export async function updateBrand(req, res) {

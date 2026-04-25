@@ -1,4 +1,5 @@
 import { BannerStatus } from "../constants";
+import { getAvatarUrl } from "../helpers/imageHelper";
 import db from "../models"
 import { Sequelize } from "sequelize";
 const { Op } = Sequelize;
@@ -28,7 +29,10 @@ export const getBanners = async (req, res) => {
 
     return res.status(200).json({
         message: 'Get banners successfully',
-        data: banners,
+        data: banners.map(banner=>({
+            ...banner.get({plain:true}),
+            image:getAvatarUrl(banner.image)
+        })),
         currentPage: parseInt(page, 10),
         totalPages: Math.ceil(totalBanners / pageSize),
         totalBanners
@@ -50,7 +54,10 @@ export const getBannerById = async (req, res) => {
 
     return res.status(200).json({
         message: 'Get banner successfully',
-        data: banner
+        data: {
+            ...banner.get({plain:true}),
+            image:getAvatarUrl(banner.image)
+        }
     });
 };
 
