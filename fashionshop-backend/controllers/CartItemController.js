@@ -63,13 +63,21 @@ export const getCartItemByCartId = async (req, res) => {
 }
 
 export const insertCartItem = async (req, res) => {
-    const { cart_id, product_id, quantity } = req.body;
-    const existingProduct = await db.Product.findByPk(product_id);
+    const { cart_id, product_variant_id, quantity } = req.body;
+    const existingProductVariant = await db.ProductVariantValue.findByPk(product_variant_id);
+    if (!existingProductVariant) {
+        return res.status(404).json({
+            message: 'Product Variant not found'
+        });
+    }
+        
+    const existingProduct = await db.Product.findByPk(existingProductVariant.product_id);
     if (!existingProduct) {
         return res.status(404).json({
             message: 'Product not found'
         });
     }
+
     if(existingProduct.quantity < quantity) {
         return res.status(400).json({
             message: 'Not enough product quantity available'
@@ -86,7 +94,7 @@ export const insertCartItem = async (req, res) => {
     const existingCartItem = await db.CartItem.findOne({
         where: {
             cart_id,
-            product_id
+            product_variant_id
         }
     });
 

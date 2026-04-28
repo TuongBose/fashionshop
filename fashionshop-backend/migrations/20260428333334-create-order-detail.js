@@ -17,13 +17,13 @@ module.exports = {
           key:'id'
         }
       },
-      product_id: {
+      product_variant_id: {
         type: Sequelize.INTEGER,
         allowNull:false,
-        references:{
-          model:'products',
-          key:'id'
-        }
+        references: {
+          model: 'product_variant_values',
+          key: 'id'
+        },
       },
       price: {
         type: Sequelize.INTEGER

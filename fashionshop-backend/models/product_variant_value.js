@@ -12,7 +12,16 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       ProductVariantValue.belongsTo(models.Product,{
         foreignKey: 'product_id',
+        as: 'product'
       })
+      ProductVariantValue.hasMany(models.CartItem, {
+        foreignKey: 'product_variant_id',
+        as: 'cart_items'
+      })
+      ProductVariantValue.hasMany(models.OrderDetail, {
+        foreignKey: 'product_variant_id',
+        as: 'order_details'
+      });
     }
   }
   ProductVariantValue.init({

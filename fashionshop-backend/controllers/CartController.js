@@ -128,11 +128,17 @@ export const checkoutCart = async (req, res) => {
     try {
         const cart = await db.Cart.findByPk(cart_id, {
             include: [{
-                model: db.cartItem,
+                model: db.CartItem,
                 as: 'cart_items',
+                attributes: ['product_variant_id', 'quantity'],
                 include: [{
-                    model: db.Product,
-                    as: 'product',
+                    model: db.ProductVariantValue,
+                    as: 'product_variant_value',
+                    include: [{
+                        model: db.Product,
+                        as: 'product',
+                        attributes: ['id', 'name', 'image', 'description']
+                    }]
                 }]
             }],
         });
@@ -143,20 +149,23 @@ export const checkoutCart = async (req, res) => {
             });
         }
 
+        const calculatedTotal = cart.cart_items.reduce((acc, item) => 
+            acc + item.product_variant_value.price * item.quantity, 0);
+
         const newOrder = await db.Order.create({
-            user_id: cart.user_id,
-            session_id: cart.session_id,
-            status:OrderStatus.PENDING,
-            total: total || cart.cart_items.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
-            note: note
+            user_id: cart.user_id|| null,
+            session_id: cart.session_id|| null,
+            status: OrderStatus.PENDING,
+            total: total || calculatedTotal,
+            note: note || ''
         }, { transaction });
 
         for (let item of cart.cart_items) {
             await db.OrderDetail.create({
                 order_id: newOrder.id,
-                product_id: item.product_id,
+                product_variant_id: item.product_variant_value.id,
                 quantity: item.quantity,
-                price: item.product.price
+                price: item.product_variant_value.price
             }, { transaction });
         }
 

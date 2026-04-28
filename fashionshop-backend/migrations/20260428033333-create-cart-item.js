@@ -19,10 +19,10 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      product_id: {
+      product_variant_id: {
         type: Sequelize.INTEGER,
         references: {
-          model: 'products',
+          model: 'product_variant_values',
           key: 'id'
         },
       },
