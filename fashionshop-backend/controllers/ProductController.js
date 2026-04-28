@@ -2,7 +2,6 @@ import { Sequelize } from "sequelize";
 const { Op } = Sequelize;
 import db from "../models"
 import { getAvatarUrl } from "../helpers/imageHelper";
-import { up } from "../migrations/20260425052209-create-attribute";
 
 export async function getProducts(req, res) {
   // const products = await db.Product.findAll(); // Phai phan trang
@@ -69,12 +68,19 @@ export async function getProductById(req, res) {
     },
     {
       model: db.ProductAttributeValue,
-      as: 'attributes',
+      as: 'product_attribute_values',
       include: [{
         model: db.Attribute,
-        attributes: ['name']
+        as: 'attribute',
+        attributes: ['id', 'name']
       }]
-    }]
+    },
+    {
+      model: db.ProductVariantValue,
+      as: 'product_variant_values',
+      attributes: ['id', 'price', 'old_price', 'stock', 'sku']
+    }
+    ]
   });
   if (!product) {
     // If not found product, return a 404 Not Found response
@@ -82,18 +88,51 @@ export async function getProductById(req, res) {
       message: 'Product does not exists'
     })
   }
+
+  const variantValuesData = [];
+  for (const variant of product.product_variant_values) {
+    const variantValueIds = variant.sku.split('-').map(Number);
+    const variantValues = await db.VariantValue.findAll({
+      where: {
+        id: variantValueIds
+      },
+      include: [{
+        model: db.Variant,
+        as: 'variant',
+        attributes: ['id', 'name']
+      }]
+    });
+
+    variantValuesData.push({
+      id: variant.id,
+      price: variant.price,
+      old_price: variant.old_price,
+      stock: variant.stock,
+      sku: variant.sku,
+      values: variantValues.map(value => ({
+        id: value.id,
+        name: value.variant?.name || null,
+        value: value.value,
+        image: value.image || null,
+      }))
+    });
+  }
+
+  const productData = {
+    ...product.get({ plain: true }),
+    image: getAvatarUrl(product.image),
+    product_images: product.product_images.map(image => getAvatarUrl(image.image_url)),
+    attributes: product.product_attribute_values.map(attr => ({
+      name: attr.attribute?.name || null,
+      value: attr.value
+    })),
+    variants: variantValuesData
+  };
+
   res.status(200).json({
     message: 'Get Product detail successfully',
-    data: {
-      ...product.get({ plain: true }),
-      image: getAvatarUrl(product.image),
-      product_images: product.product_images.map(image => image.image_url),
-      attributes: product.attributes.map(attr => ({
-        name: attr.Attribute.name,
-        value: attr.value
-      }))
-    }
-  })
+    data: productData
+  });
 }
 
 export async function insertProduct(req, res) {
@@ -114,7 +153,24 @@ export async function insertProduct(req, res) {
   //     message: 'User does not exist'
   //   })
   // }
-  const { name, attributes = [], ...productData } = req.body;
+  const { name, attributes = [], variants = [], variant_values = [], ...productData } = req.body;
+  const { category_id, brand_id } = productData;
+
+  const categoryExists = await db.Category.findByPk(category_id);
+  if (!categoryExists) {
+    return res.status(404).json({
+      message: 'Category does not exist'
+    })
+  }
+
+  const brandExists = await db.Brand.findByPk(brand_id);
+  if (!brandExists) {
+    return res.status(404).json({
+      message: 'Brand does not exist'
+    })
+  }
+  const transaction = await db.sequelize.transaction();
+
   const existingProduct = await db.Product.findOne({
     where: {
       name: name
@@ -127,39 +183,100 @@ export async function insertProduct(req, res) {
     })
   }
 
-  const product = await db.Product.create({ ...productData, name });
+  const product = await db.Product.create(
+    { ...productData, name },
+    { transaction }
+  );
 
-  try {
-    for (const attributeData of attributes) {
-      const [attribute] = await db.Attribute.findOrCreate({
-        where: { name: attributeData.name },
-      });
+  const createdAttributes = [];
+  for (const attributeData of attributes) {
+    const [attribute] = await db.Attribute.findOrCreate({
+      where: { name: attributeData.name },
+      transaction,
+    });
 
-      await db.ProductAttributeValue.create({
+    await db.ProductAttributeValue.create(
+      {
         product_id: product.id,
         attribute_id: attribute.id,
         value: attributeData.value,
+      },
+      { transaction }
+    );
+
+    createdAttributes.push({
+      name: attribute.name,
+      value: attributeData.value
+    });
+  }
+
+  for (const variant of variants) {
+    const [variantEntry] = await db.Variant.findOrCreate({
+      where: { name: variant.name },
+      transaction,
+    });
+
+    for (const value of variant.values) {
+      await db.VariantValue.findOrCreate({
+        where: {
+          value,
+          variant_id: variantEntry.id
+        },
+        transaction,
+      })
+    }
+  }
+
+  const createdVariantValues = [];
+  for (const variantData of variant_values) {
+    const variantValueIds = [];
+    for (const value of variantData.variant_combination) {
+      const variantValue = await db.VariantValue.findOne({
+        where: {
+          value
+        }, transaction,
       });
+
+      if (variantValue) {
+        variantValueIds.push(variantValue.id);
+      }
     }
 
-    return res.status(201).json({
-      message: 'Insert Product successfully',
-      data: {
-        ...product.get({ plain: true }),
-        image: getAvatarUrl(product.image),
-        attributes: attributes.map(attr => ({
-          name: attr.name,
-          value: attr.value
-        }))
-      }
-    })
+    const sku = variantValueIds.sort((a, b) => a - b).join('-');
+
+    const createdVariant = await db.ProductVariantValue.create(
+      {
+        product_id: product.id,
+        price: variantData.price,
+        old_price: variantData.old_price || null,
+        stock: variantData.stock || 0,
+        sku,
+      },
+      { transaction }
+    );
+
+    createdVariantValues.push({
+      sku,
+      price: createdVariant.price,
+      old_price: createdVariant.old_price,
+      stock: createdVariant.stock,
+    });
   }
-  catch (error) {
-    return res.status(500).json({
-      message: 'An error occurred while inserting the product',
-      error: error.message
-    })
-  }
+  await transaction.commit();
+
+  return res.status(201).json({
+    message: 'Insert Product successfully',
+    data: {
+      ...product.get({ plain: true }),
+      image: getAvatarUrl(product.image),
+      attributes: createdAttributes,
+      variants: variants.map(variant => ({
+        name: variant.name,
+        values: variant.values
+      })),
+      variant_values: createdVariantValues
+    }
+  })
 }
 
 export async function deleteProduct(req, res) {

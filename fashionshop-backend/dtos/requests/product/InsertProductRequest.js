@@ -12,7 +12,9 @@ class InsertProductRequest {
         this.quantity = data.quantity
         this.brand_id = data.brand_id
         this.category_id = data.category_id
-        this.attributes = data.attributes
+        this.attributes = data.attributes,
+            this.variants = data.variants,
+            this.variant_values = data.variant_values
     }
 
     static validate(data) {
@@ -30,6 +32,16 @@ class InsertProductRequest {
             attributes: Joi.array().items(Joi.object({
                 name: Joi.string().required(),
                 value: Joi.string().required()
+            })).optional(),
+            variants: Joi.array().items(Joi.object({
+                name: Joi.string().required(),
+                values: Joi.array().items(Joi.string().required()).required()
+            })).optional(),
+            variant_values: Joi.array().items(Joi.object({
+                variant_combination: Joi.array().items(Joi.string().required()).required(),
+                price: Joi.number().positive().required(),
+                old_price: Joi.number().positive().required(),
+                stock: Joi.number().integer().min(0).required(),
             })).optional()
         });
 
