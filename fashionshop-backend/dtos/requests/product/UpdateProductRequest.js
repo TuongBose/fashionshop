@@ -12,6 +12,7 @@ class UpdateProductRequest {
         this.quantity = data.quantity
         this.brand_id = data.brand_id
         this.category_id = data.category_id
+        this.attributes = data.attributes
     }
 
     static validate(data) {
@@ -25,7 +26,11 @@ class UpdateProductRequest {
             buyturn: Joi.number().integer().min(0).optional(),
             quantity: Joi.number().integer().min(0).optional(),
             brand_id: Joi.number().integer().optional(),
-            category_id: Joi.number().integer().optional()
+            category_id: Joi.number().integer().optional(),
+            attributes: Joi.array().items(Joi.object({
+                name: Joi.string().required(),
+                value: Joi.string().required()
+             })).optional()
         });
 
         return schema.validate(data); // {error, value}

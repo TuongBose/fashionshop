@@ -37,6 +37,10 @@ module.exports = (sequelize, DataTypes) => {
       Product.hasMany(models.CartItem, {
         foreignKey: 'product_id'
       });
+      Product.hasMany(models.ProductAttributeValue, {
+        foreignKey: 'product_id',
+        as:'attributes'
+      });
     }
   }
   Product.init({

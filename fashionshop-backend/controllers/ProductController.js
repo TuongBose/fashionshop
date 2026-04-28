@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize";
 const { Op } = Sequelize;
 import db from "../models"
 import { getAvatarUrl } from "../helpers/imageHelper";
+import { up } from "../migrations/20260425052209-create-attribute";
 
 export async function getProducts(req, res) {
   // const products = await db.Product.findAll(); // Phai phan trang
@@ -21,9 +22,23 @@ export async function getProducts(req, res) {
     };
   }
 
+  let attributeWhereClause = {};
+  if (search.trim() !== '') {
+    attributeWhereClause = {
+      value: { [Op.iLike]: `%${search}%` }
+    };
+  }
+
   const [products, totalProducts] = await Promise.all([
     db.Product.findAll({
       where: whereClause,
+      include: [{
+        model: db.ProductAttributeValue,
+        as: 'attributes',
+        include: [{ model: db.Attribute, }],
+        where: attributeWhereClause,
+        required: false
+      }],
       limit: pageSize,
       offset: offset,
     }),
@@ -51,6 +66,14 @@ export async function getProductById(req, res) {
     include: [{
       model: db.ProductImage,
       as: 'product_images',
+    },
+    {
+      model: db.ProductAttributeValue,
+      as: 'attributes',
+      include: [{
+        model: db.Attribute,
+        attributes: ['name']
+      }]
     }]
   });
   if (!product) {
@@ -63,7 +86,12 @@ export async function getProductById(req, res) {
     message: 'Get Product detail successfully',
     data: {
       ...product.get({ plain: true }),
-      image: getAvatarUrl(product.image)
+      image: getAvatarUrl(product.image),
+      product_images: product.product_images.map(image => image.image_url),
+      attributes: product.attributes.map(attr => ({
+        name: attr.Attribute.name,
+        value: attr.value
+      }))
     }
   })
 }
@@ -86,7 +114,7 @@ export async function insertProduct(req, res) {
   //     message: 'User does not exist'
   //   })
   // }
-  const { name } = req.body;
+  const { name, attributes = [], ...productData } = req.body;
   const existingProduct = await db.Product.findOne({
     where: {
       name: name
@@ -94,22 +122,68 @@ export async function insertProduct(req, res) {
   });
   if (existingProduct) {
     return res.status(400).json({
-      message: 'Product with the same name already exists'
+      message: 'Product with the same name already exists',
+      data: existingProduct
     })
   }
 
-  const product = await db.Product.create(req.body);
-  return res.status(201).json({
-    message: 'Insert Product successfully',
-    data: {
-      ...product.get({ plain: true }),
-      image: getAvatarUrl(product.image)
+  const product = await db.Product.create({ ...productData, name });
+
+  try {
+    for (const attributeData of attributes) {
+      const [attribute] = await db.Attribute.findOrCreate({
+        where: { name: attributeData.name },
+      });
+
+      await db.ProductAttributeValue.create({
+        product_id: product.id,
+        attribute_id: attribute.id,
+        value: attributeData.value,
+      });
     }
-  })
+
+    return res.status(201).json({
+      message: 'Insert Product successfully',
+      data: {
+        ...product.get({ plain: true }),
+        image: getAvatarUrl(product.image),
+        attributes: attributes.map(attr => ({
+          name: attr.name,
+          value: attr.value
+        }))
+      }
+    })
+  }
+  catch (error) {
+    return res.status(500).json({
+      message: 'An error occurred while inserting the product',
+      error: error.message
+    })
+  }
 }
 
 export async function deleteProduct(req, res) {
   const { id } = req.params;
+  const orderDetailExists = await db.OrderDetail.findOne({
+    where: { product_id: id },
+    include: [{
+      model: db.Order,
+      as: 'order',
+      attributes: ['id', 'status', 'note', 'total', 'created_at'],
+    }]
+  });
+
+  if (orderDetailExists) {
+    return res.status(400).json({
+      message: 'Cannot delete product because it is associated with existing orders',
+      data: { order: orderDetailExists.order }
+    })
+  }
+
+  await db.ProductAttributeValue.destroy({
+    where: { product_id: id }
+  });
+
   const deleted = await db.Product.destroy({
     where: { id }
   });
@@ -118,7 +192,7 @@ export async function deleteProduct(req, res) {
       message: 'Delete product successfully'
     })
   } else {
-    res.status(404).json({
+    return res.status(404).json({
       message: 'Product not found'
     })
   }
@@ -126,28 +200,42 @@ export async function deleteProduct(req, res) {
 
 export async function updateProduct(req, res) {
   const { id } = req.params;
-  const { name } = req.body;
-  const existingProduct = await db.Product.findOne({
-    where: {
-      name: name,
-      id: { [db.Sequelize.Op.ne]: id }
-    }
-  });
-  if (existingProduct) {
-    return res.status(400).json({
-      message: 'Product with the same name already exists'
-    })
-  }
+  const { attributes = [], ...productData } = req.body;
 
-  const updatedProduct = await db.Product.update(req.body, {
+  const [updatedRowCount] = await db.Product.update(productData, {
     where: { id }
   });
-  if (updatedProduct[0] > 0) {
-    res.status(200).json({
+
+  if (updatedRowCount > 0) {
+    for (const attr of attributes) {
+      const [attribute] = await db.Attribute.findOrCreate({
+        where: { name: attr.name },
+      });
+
+      const productAttributeValue = await db.ProductAttributeValue.findOne({
+        where: {
+          product_id: id,
+          attribute_id: attribute.id,
+        }
+      });
+
+      if (productAttributeValue) {
+        await productAttributeValue.update({
+          value: attr.value,
+        });
+      } else {
+        await db.ProductAttributeValue.create({
+          product_id: id,
+          attribute_id: attribute.id,
+          value: attr.value,
+        });
+      }
+    }
+    return res.status(200).json({
       message: 'Update product successfully'
     })
   } else {
-    res.status(404).json({
+    return res.status(404).json({
       message: 'Product not found'
     })
   }
