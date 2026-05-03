@@ -13,6 +13,8 @@ import * as ImageController from './controllers/ImageController.js'
 import * as ProductImageController from './controllers/ProductImageController.js'
 import * as CartController from './controllers/CartController.js'
 import * as CartItemController from './controllers/CartItemController.js'
+import * as VariantValueController from './controllers/VariantValueController.js'
+import * as PaymentController from './controllers/PaymentController.js'
 
 import asyncHandler from './middlewares/asyncHandler.js'
 import validate from './middlewares/validate.js'
@@ -63,6 +65,9 @@ export function AppRoute(app) {
         validateImageExists,
         asyncHandler(ProductController.insertProduct)
     )
+    router.post('/products/check_and_fetch_variant',asyncHandler(ProductController.checkAndFetchVariant))
+    router.get('/product_variant_values/products/:product_id',asyncHandler(ProductController.getVariantDetailsByProduct))    
+
     router.put('/products/:id',
         requireRoles([UserRole.ADMIN]),
         validate(UpdateProductRequest),
@@ -245,6 +250,34 @@ export function AppRoute(app) {
         asyncHandler(ProductImageController.insertProductImage))
     router.put('/product-images/:id', asyncHandler(ProductImageController.updateProductImage))
     router.delete('/product-images/:id', asyncHandler(ProductImageController.deleteProductImage))
+
+    // ---------- VariantValue ----------
+    router.get('/variant-values', asyncHandler(VariantValueController.getVariantValues));
+    router.get('/variant-values/:id', asyncHandler(VariantValueController.getVariantValueById));
+    router.post(
+        '/variant-values',
+        requireRoles([UserRole.ADMIN]),
+        validateImageExists,
+        asyncHandler(VariantValueController.insertVariantValue)
+    );
+    router.delete(
+        '/variant-values/:id',
+        requireRoles([UserRole.ADMIN]),
+        asyncHandler(VariantValueController.deleteVariantValue)
+    );
+    router.put(
+        '/variant-values/:id',
+        requireRoles([UserRole.ADMIN]),
+        validateImageExists,
+        asyncHandler(VariantValueController.updateVariantValue)
+    );
+
+    // ---------- Payment ----------
+    router.post('/payments/create_payment_url', asyncHandler(PaymentController.createPaymentUrl)); 
+    router.get('/payments/querydr', asyncHandler(PaymentController.queryTransaction)); 
+    router.get('/payments/refund', asyncHandler(PaymentController.refundTransaction));
+    router.get('/payments/vnpay_return', asyncHandler(PaymentController.vnpayReturn)); 
+    router.get('/payments/vnpay_ipn', asyncHandler(PaymentController.vnpayIPN));
 
     // Mount all routes under /api
     app.use('/api', router)

@@ -6,57 +6,180 @@ import { getAvatarUrl } from "../helpers/imageHelper";
 export async function getProducts(req, res) {
   // const products = await db.Product.findAll(); // Phai phan trang
 
-  const { search = '', page = 1 } = req.query;
-  const pageSize = 5;
+  const { search = '', page = 1, category_id, brand_id, page_size = 6 } = req.query;
+  const pageSize = parseInt(page_size, 10) || 6;
   const offset = (page - 1) * pageSize;
 
   let whereClause = {};
   if (search.trim() !== '') {
-    whereClause = {
-      [Op.or]: [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } },
-        { specification: { [Op.iLike]: `%${search}%` } }
-      ]
-    };
+    whereClause[Op.or] = [
+      { name: { [Op.like]: `%${search}%` } },
+      { description: { [Op.like]: `%${search}%` } },
+    ];
   }
 
-  let attributeWhereClause = {};
-  if (search.trim() !== '') {
-    attributeWhereClause = {
-      value: { [Op.iLike]: `%${search}%` }
-    };
+  if (category_id) {
+    const categoryIds = category_id.split(',').map(id => parseInt(id, 10));
+    whereClause.category_id = { [Op.in]: categoryIds };
+  }
+
+  if (brand_id) {
+    const brandIds = brand_id.split(',').map(id => parseInt(id, 10));
+    whereClause.brand_id = { [Op.in]: brandIds };
   }
 
   const [products, totalProducts] = await Promise.all([
     db.Product.findAll({
       where: whereClause,
-      include: [{
-        model: db.ProductAttributeValue,
-        as: 'attributes',
-        include: [{ model: db.Attribute, }],
-        where: attributeWhereClause,
-        required: false
-      }],
+      include: [
+        {
+          model: db.ProductAttributeValue,
+          as: 'product_attribute_values', 
+          include: [
+            {
+              model: db.Attribute,
+              as: 'attribute',
+              attributes: ['id', 'name'],
+            },
+          ],
+          required: false, 
+        },
+      ],
       limit: pageSize,
       offset: offset,
     }),
     db.Product.count({
       where: whereClause,
-    })
+      distinct: true,
+      include: [
+        {
+          model: db.ProductAttributeValue,
+          as: 'product_attribute_values', 
+          required: false,
+        },
+      ],
+    }),
   ]);
 
-  return res.status(200).json({
-    message: 'Get Products successfully',
-    data: products.map(product => ({
-      ...product.get({ plain: true }),
-      image: getAvatarUrl(product.image)
-    })),
+  const formattedProducts = products.map(product => {
+    const plainProduct = product.get({ plain: true });
+
+    const attributes = plainProduct.product_attribute_values?.map(attr => ({
+      id: attr.attribute?.id || null,
+      name: attr.attribute?.name || null,
+      value: attr.value || null,
+    })) || [];
+
+    delete plainProduct.product_attribute_values;
+
+    return {
+      ...plainProduct,
+      image: getAvatarUrl(plainProduct.image), 
+      attributes, 
+    };
+  });
+
+
+  res.status(200).json({
+    message: 'Lấy danh sách sản phẩm thành công',
+    data: formattedProducts,
     currentPage: parseInt(page, 10),
     totalPages: Math.ceil(totalProducts / pageSize),
     total: totalProducts,
-  })
+  });
 }
+
+export const checkAndFetchVariant = async (req, res) => {
+  try {
+    console.log(Object.keys(req.body));
+    const { product_id, ...bodyData } = req.body; // Lấy product_id và các key-value còn lại từ body    
+
+    const keys = Object.keys(bodyData);
+
+    if (!product_id) {
+      return res.status(400).json({
+        message: 'Thiếu trường product_id trong dữ liệu đầu vào.',
+      });
+    }
+
+    if (!keys.length) {
+      return res.status(400).json({
+        message: 'Dữ liệu đầu vào không hợp lệ, cần ít nhất một key-value.',
+      });
+    }
+
+    // Kiểm tra xem product_id có tồn tại không
+    const product = await db.Product.findByPk(product_id);
+    if (!product) {
+      return res.status(404).json({
+        message: `Không tìm thấy sản phẩm với ID ${product_id}.`,
+      });
+    }
+
+    // Duyệt qua các key-value
+    const variantValueIds = [];
+    for (const key of keys) {
+      const value = bodyData[key];
+
+      // Kiểm tra trong bảng Variant
+      const variant = await db.Variant.findOne({
+        where: { name: key },
+      });
+
+      if (!variant) {
+        return res.status(404).json({
+          message: `Không tìm thấy variant với tên "${key}".`,
+        });
+      }
+
+      // Kiểm tra trong bảng VariantValue
+      const variantValue = await db.VariantValue.findOne({
+        where: {
+          variant_id: variant.id,
+          value: value,
+        },
+      });
+
+      if (!variantValue) {
+        return res.status(404).json({
+          message: `Không tìm thấy giá trị "${value}" trong variant "${key}".`,
+        });
+      }
+
+      // Thêm id của variant_value vào danh sách
+      variantValueIds.push(variantValue.id);
+    }
+
+    // Tạo chuỗi SKU từ danh sách id
+    const sku = variantValueIds.sort((a, b) => a - b).join('-');
+
+    // Kiểm tra xem SKU này có tồn tại trong bảng product_variant_values không
+    const productVariantValue = await db.ProductVariantValue.findOne({
+      where: {
+        sku,
+        product_id, // Kiểm tra thêm điều kiện product_id
+      },
+    });
+
+    if (!productVariantValue) {
+      return res.status(404).json({
+        message: 'Không tìm thấy product_variant_value với SKU được tạo và product_id.',
+      });
+    }
+
+    // Trả về bản ghi product_variant_value
+    res.status(200).json({
+      message: 'Lấy thông tin product_variant_value thành công.',
+      data: productVariantValue,
+    });
+  } catch (error) {
+    console.error('Lỗi khi xử lý API checkAndFetchVariant:', error);
+    res.status(500).json({
+      message: 'Đã xảy ra lỗi trong quá trình xử lý.',
+      error: error.message,
+    });
+  }
+};
 
 export async function getProductById(req, res) {
   const productId = req.params.id; // Cách 1: Lấy tham số id truyền vào từ params
@@ -356,6 +479,53 @@ export async function updateProduct(req, res) {
       message: 'Product not found'
     })
   }
+}
+
+export async function getVariantDetailsByProduct(req, res) {
+  const { product_id } = req.params; 
+  const { variants } = req.query; 
+
+  const productExists = await db.Product.findByPk(product_id);
+  if (!productExists) {
+    return res.status(400).json({
+      message: `Product ID ${product_id} không tồn tại, vui lòng kiểm tra lại.`,
+    });
+  }
+
+  const variantValueIds = variants ? variants.split(',').map(id => parseInt(id, 10)) : [];
+  if (variantValueIds.length === 0) {
+    return res.status(400).json({
+      message: 'Danh sách variants không hợp lệ hoặc không được cung cấp.',
+    });
+  }
+
+  const sku = variantValueIds.sort((a, b) => a - b).join('-');
+
+  const productVariantValues = await db.ProductVariantValue.findAll({
+    where: {
+      product_id,
+      sku,
+    },
+  });
+
+  if (productVariantValues.length === 0) {
+    return res.status(404).json({
+      message: `Không tìm thấy biến thể nào với SKU "${sku}" cho sản phẩm ${product_id}.`,
+    });
+  }
+
+  const detailedVariants = productVariantValues.map(variant => ({
+    id: variant.id,
+    price: variant.price,
+    old_price: variant.old_price || null,
+    stock: variant.stock,
+    sku: variant.sku,
+  }));
+
+  res.status(200).json({
+    message: 'Lấy thông tin chi tiết biến thể thành công',
+    data: detailedVariants,
+  });
 }
 
 /*
